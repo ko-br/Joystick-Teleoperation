@@ -27,12 +27,15 @@ class JoystickTeleoperation:
                     print("Quitting Joystick Teleoperation...")
                     return
                     
-            pygame.event.pump()
-            for i in range(self._joystick.get_numbuttons()):
-                if self._joystick.get_button(i): # if button pressed
-                    handler = self._button_map.get(i) #  get handlr
-                    if handler:                     
-                        handler() # call handler
+            # pygame.event.pump()
+            # for i in range(self._joystick.get_numbuttons()):
+                # if self._joystick.get_button(i): # if button pressed
+            for event in pygame.event.get():
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        button = event.button
+                        handler = self._button_map.get(button) #  get handlr
+                        if handler:                     
+                            handler() # call handler
 
         except Exception as e:
             print(f"Error running joystick teleoperation: {e}")
