@@ -8,6 +8,7 @@ class JoystickTeleoperation:
         self._handlers = list(handlers)
         self._joystick = None
         self._button_count = 12 # DEFAULT - WILL CHANGE WHEN JOYSTICK IS CONNECTED
+        self._button_map = None
 
         # # predefined button mapping. can be changed by running remap
         # self._button_map = {}
@@ -15,6 +16,8 @@ class JoystickTeleoperation:
         #     self._button_map[i] = handler # assign buttons to handlers in order
         
         # self._print_button_map()
+
+        self._connect()
 
 
     def run(self):
@@ -45,12 +48,16 @@ class JoystickTeleoperation:
     def remap(self, button, function):
         """
         Remap a button on a joystick to a specific function. 
-        Parameters: 
-            Button: Number of the button on the joystick (check docs)
-            Function: Function to be mapped to the button (should match name of handler function)
+        Button: Number of the button on the joystick
+        Function: Function to be mapped to the button 
         """
         try:
             if button in self._button_map:
+                # unmap from old button first
+                for btn, func in self._button_map.items():
+                    if func == function and btn != button:
+                        self._button_map[btn] = None
+
                 self._button_map[button] = function  
                 print(f"{function.__name__} mapped to Button {button}")
 
@@ -101,7 +108,7 @@ class JoystickTeleoperation:
 
     def _print_button_map(self):
         # print out the button mapping
-        print("Button Functions:")
+        print("\nButton Functions:")
         for button, handler in self._button_map.items():
             if handler:
                 print(f"Button {button}: {handler.__name__}")
