@@ -1,4 +1,4 @@
-from modules.joystick_teleoperation import JoystickTeleoperation
+from joystick.joystick_teleoperation import JoystickTeleoperation
 
 # test handlers
 def jog():
