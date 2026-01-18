@@ -9,6 +9,7 @@ A lightweight Python library for integrating game controllers into robotics proj
 - **Plug-and-play**: Automatically detects and connects to any joystick supported by `pygame`
 - **Dynamic mapping**: Assign and reassign handler functions to buttons at runtime
 - **Button identification**: Built-in tool to discover button indices on your specific controller
+- **Configuration persistence**: Save and load button mappings to JSON files
 - **Handler-based architecture**: Separates input handling from application logic
 
 ## Project Structure
@@ -71,14 +72,66 @@ while True:
 
 ```
 
+---
+
+## Configuration Workflow
+
+### Option 1: Interactive Configuration
+
+Use the built-in configuration function to assign buttons interactively:
+
+```
+controller = JoystickTeleoperation(move_forward, move_backward, emergency_stop)
+
+# Start interactive configuration
+controller.configure()
+# Console prompts:
+# === Joystick Configuration Mode ===
+# Press a button to assign it to each function.
+# Press a button for: move_forward
+# (press button 3)
+# move_forward mapped to Button 3
+# Press a button for: move_backward
+# (press button 5)
+# move_backward mapped to Button 5
+# Configuration complete!
+# Button Functions:
+# Button 3: move_forward
+# Button 5: move_backward
+# Button 7: emergency_stop
+
+# Save configuration for future use
+controller.save_configuration()
+# Configuration saved to configurations/button_configuration.json
+```
+
+### Option 2: Load Previous Configuration
+
+Reload a saved configuration without reconfiguring:
+
+```
+controller = JoystickTeleoperation(move_forward, move_backward, emergency_stop)
+
+# Load previously saved button mapping
+controller.load_configuration("configurations/button_configuration.json")
+# Configuration loaded from configurations/button_configuration.json
+# Button Functions:
+# Button 3: move_forward
+# Button 5: move_backward
+# Button 7: emergency_stop
+
+# Now ready to use with saved mappings
+while True:
+    controller.run()
+```
+
+
 ### Dynamic Remapping
 
 Change button assignments on the fly:
 ```
 # Remap emergency_stop to button 5
 controller.remap(5, emergency_stop)
-
-# Button 2 is now unmapped, button 5 triggers emergency_stop
 ```
 
 ### Identifying Buttons
@@ -144,7 +197,6 @@ while True:
 - `function` (callable): Handler function to assign
 
 **Behavior:**
-- Unmaps the function from its previous button (if assigned elsewhere)
 - Assigns function to the new button
 - Prints updated button mapping to console
 - Raises error if button does not exist on connected joystick
@@ -162,6 +214,107 @@ controller.remap(11, emergency_stop)
 # ...
 # Button 11: emergency_stop'
 ```
+
+---
+
+### `configure()`
+
+**Interactive configuration wizard - Assign buttons step-by-step**
+
+Enters an interactive mode that prompts you to press a button for each handler function. All previous mappings are cleared before configuration starts.
+
+**Usage:**
+```python
+controller.configure()
+
+# Console interaction:
+# === Joystick Configuration Mode ===
+# Press a button to assign it to each function.
+# Press a button for: move_forward
+# (you press button 5)
+# move_forward mapped to Button 5
+# Press a button for: move_backward
+# (you press button 7)
+# move_backward mapped to Button 7
+# Configuration complete!
+# Button Functions:
+# Button 5: move_forward
+# Button 7: move_backward
+```
+
+**Tip:** Run `configure()` once, then `save_configuration()` to avoid reconfiguring every time.
+
+---
+
+### `save_configuration(filename="configurations/button_configuration.json")`
+
+**Save current button mapping to a JSON file**
+
+**Parameters:**
+- `filename` (str, optional): Path to save configuration file. Defaults to `"configurations/button_configuration.json"`.
+
+**Behavior:**
+- Creates `configurations/` directory if it doesn't exist
+- Saves button-to-function mappings in JSON format
+- Overwrites existing file if present
+
+**Example:**
+```python
+# Save to default location
+controller.save_configuration()
+# Configuration saved to configurations/button_configuration.json
+
+# Save to custom location
+controller.save_configuration("my_custom_config.json")
+# Configuration saved to my_custom_config.json
+```
+
+**Generated JSON format:**
+```json
+{
+    "0": null,
+    "1": null,
+    "2": "move_forward",
+    "3": "move_backward",
+    "4": "emergency_stop"
+}
+```
+
+---
+
+### `load_configuration(filename)`
+
+**Load button mapping from a saved JSON file**
+
+**Parameters:**
+- `filename` (str): Path to configuration file to load
+
+**Behavior:**
+- Reads JSON file and applies button mappings
+- Skips buttons that don't exist on current joystick (with warning)
+- Skips handler functions not provided to constructor (with warning)
+- Prints updated button mapping to console
+
+**Example:**
+```python
+# Load from default location
+controller.load_configuration("configurations/button_configuration.json")
+
+# Load from custom location
+controller.load_configuration("my_custom_config.json")
+
+# Output:
+# Configuration loaded from my_custom_config.json
+# Button Functions:
+# Button 2: move_forward
+# Button 3: move_backward
+# Button 4: emergency_stop
+```
+
+**Error handling:**
+- If file doesn't exist: prints error message, mapping unchanged
+- If handler not found: prints warning, skips that button
+- If button doesn't exist: prints warning, skips that mapping
 
 ---
 
@@ -225,16 +378,4 @@ Then press each button to see its index. Common layouts:
 - Mode: 12
 ---
 
-
-## Roadmap
-
-**Current Status:** Core functionality complete
-
-**Planned Features:**
-- [ ] D-pad support 
-- [ ] `map_all()` method for bulk remapping
-- [ ] Configuration file support (YAML/JSON to save/load button mappings)
-- [ ] Button press duration tracking (detect hold vs tap)
-
----
 
