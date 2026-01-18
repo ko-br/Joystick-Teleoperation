@@ -74,8 +74,33 @@ class JoystickTeleoperation:
         Remap all functions to buttons
         """
         self._check_connection() 
-        #TODO DONT FORGET TO IMPPLEMENT THISSSSSSSSSSSSSSSSSSSSSSSS #############
 
+        print("\n=== Joystick Configuration Mode ===")
+        print("Press a button to assign it to each function.")
+
+        # reset all mappings
+        for button in self._button_map:
+            self._button_map[button] = None 
+
+        for handler in self._handlers:
+            print(f"Press a button for: { handler.__name__}")
+
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        button = event.button
+
+                        self._button_map[button] = handler
+
+                        print(f"{handler.__name__} mapped to Button {button}")
+                        break 
+                else:
+                    continue
+                break
+
+
+        print("Configuration complete!")
+        self._print_button_map()       
 
 
     def identify_buttons(self):

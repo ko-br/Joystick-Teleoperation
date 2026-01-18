@@ -24,17 +24,19 @@ def main():
         random_function_4,
     )
 
-    print("\n--- Remapping buttons ---\n")
+    # print("\n--- Remapping buttons ---\n")
 
-    teleop.remap(5, random_function_3)
-    teleop.remap(7, random_function_1)
-    teleop.remap(2, random_function_4)
-    teleop.remap(3, random_function_2)
+    # teleop.remap(5, random_function_3)
+    # teleop.remap(7, random_function_1)
+    # teleop.remap(2, random_function_4)
+    # teleop.remap(3, random_function_2)
+
+    teleop.configure()
 
     print("\n--- Saving configuration ---\n")
 
-    # teleop.save_configuration("configurations/test_config.json")
-    teleop.save_configuration()
+    teleop.save_configuration("configurations/test_config.json")
+    # teleop.save_configuration()
 
 
     print("\n--- Clearing mappings ---\n")
