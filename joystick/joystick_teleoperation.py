@@ -53,10 +53,10 @@ class JoystickTeleoperation:
 
         try:
             if button in self._button_map:
-                # unmap from old button first
-                for btn, func in self._button_map.items():
-                    if func == function and btn != button:
-                        self._button_map[btn] = None
+                # # unmap from old button first
+                # for btn, func in self._button_map.items():
+                #     if func == function and btn != button:
+                #         self._button_map[btn] = None
 
                 self._button_map[button] = function  
                 print(f"{function.__name__} mapped to Button {button}")
