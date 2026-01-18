@@ -1,4 +1,6 @@
 import pygame 
+import json
+from pathlib import Path
 
 class JoystickTeleoperation:
     def __init__(self, *handlers):
@@ -6,6 +8,12 @@ class JoystickTeleoperation:
         Accepts any number of handler functions in order
         """
         self._handlers = list(handlers)
+
+        self._handler_map = {
+            handler.__name__: handler for handler in self._handlers
+        }
+
+
         self._joystick = None
         self._button_count = 12 # DEFAULT - WILL CHANGE WHEN JOYSTICK IS CONNECTED
         self._button_map = None
@@ -61,12 +69,12 @@ class JoystickTeleoperation:
             print(f"Error remapping: {e}")
 
 
-    def map_all(self):
+    def configure(self):
         """
         Remap all functions to buttons
         """
         self._check_connection() 
-        # DONT FORGET TO IMPPLEMENT THISSSSSSSSSSSSSSSSSSSSSSSS#############
+        #TODO DONT FORGET TO IMPPLEMENT THISSSSSSSSSSSSSSSSSSSSSSSS #############
 
 
 
@@ -86,6 +94,65 @@ class JoystickTeleoperation:
                     print(f"Button {button} pressed")
                     print()
                     print("Click a button to identify:")
+
+
+    def save_configuration(self, filename = "configurations/button_configuration.json"):
+        """
+        Save current button mapping/joystick configuration to a file to load later
+        """
+        try:
+            data = {
+                str(button): (handler.__name__ if handler else None)
+                for button, handler in self._button_map.items()
+            }
+
+            path = Path(filename)
+            path.parent.mkdir(parents = True, exist_ok = True)
+
+            with open(filename, "w") as file:
+                json.dump(data, file, indent = 4)
+
+
+            print(f"Configuration saved to {filename}")
+
+        except Exception as e:
+            print(f"Error saving configuration: {e}")
+
+
+    def load_configuration(self, filename):
+        """
+        Load button mapping/joystick configuration from a file
+        """
+        try:
+            if not Path(filename).exists():
+                print(f"{filename} not found")
+                return 
+            
+            with open(filename, "r") as file:
+                data = json.load(file)
+
+            for button_str, handler_name in data.items():
+                button = int(button_str)
+
+                if button not in self._button_map:
+                    print(f"Warning: button {button} does not exist on this joystick")
+                    continue
+
+                if handler_name is None:
+                    self._button_map[button] = None 
+                else:
+                    handler = self._handler_map.get(handler_name) # handler_map is a dict mapping string names to functions
+
+                    if handler:
+                        self._button_map[button] = handler
+                    else:
+                        print(f"Warning: '{handler_name}' not found")
+
+            print(f"Configuration loaded from {filename}")
+            self._print_button_map()
+
+        except Exception as e:
+            print(f"Error loading configuration: {e}")
 
 
     def _connect(self):
@@ -126,8 +193,7 @@ class JoystickTeleoperation:
 
     def _check_connection(self):
         if not self._joystick:
-            print("No Joystick detected! Quitting...")
-            quit()
+            raise RuntimeError("No joystick detected")
 
 
     def _print_button_map(self):
