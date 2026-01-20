@@ -43,7 +43,7 @@ def main():
     for button in teleop._button_map:
         teleop._button_map[button] = None
 
-    teleop._print_button_map()
+    teleop.print_button_mapping()
 
     print("\n--- Loading configuration ---\n")
     teleop.load_configuration("configurations/test_config.json")
