@@ -53,15 +53,10 @@ class JoystickTeleoperation:
 
         try:
             if button in self._button_map:
-                # # unmap from old button first
-                # for btn, func in self._button_map.items():
-                #     if func == function and btn != button:
-                #         self._button_map[btn] = None
-
                 self._button_map[button] = function  
                 print(f"{function.__name__} mapped to Button {button}")
 
-                self.print_button_map()
+                self.print_button_mapping()
             else:
                 print(f"Button {button} does not exist on this joystick")
 
@@ -100,7 +95,7 @@ class JoystickTeleoperation:
 
 
         print("Configuration complete!")
-        self.print_button_map()       
+        self.print_button_mapping()       
 
 
     def identify_buttons(self):
@@ -174,7 +169,7 @@ class JoystickTeleoperation:
                         print(f"Warning: '{handler_name}' not found")
 
             print(f"Configuration loaded from {filename}")
-            self.print_button_map()
+            self.print_button_mapping()
 
         except Exception as e:
             print(f"Error loading configuration: {e}")
@@ -202,16 +197,18 @@ class JoystickTeleoperation:
                 self._button_count = self._joystick.get_numbuttons()
 
                 self._button_map = {}
+                button_start_index = 4 # the number of buttons to avoid in default mapping (buttons 0-3)
+
                 for i in range(self._button_count):
-                    if i < 4:
+                    if i < button_start_index:
                     # to ignore buttons 0-3 to avoid accidental triggers using the right stick
                         self._button_map[i] = None
-                    elif i - 4 < len(self._handlers):
-                        self._button_map[i] = self._handlers[i - 4]
+                    elif i - button_start_index < len(self._handlers):
+                        self._button_map[i] = self._handlers[i - button_start_index]
                     else:
                         self._button_map[i] = None
 
-                self.print_button_map()
+                self.print_button_mapping()
 
                 return True
             
@@ -224,7 +221,7 @@ class JoystickTeleoperation:
             raise RuntimeError("No joystick detected")
 
 
-    def print_button_map(self):
+    def print_button_mapping(self):
         # print out the button mapping
         print("Button Functions:")
         for button, handler in self._button_map.items():

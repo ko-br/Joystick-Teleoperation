@@ -14,7 +14,6 @@ def capture_output():
 def main():
     joystick = JoystickTeleoperation(jog, capture_input, capture_output)
 
-    # joystick.remap(7, capture_input)
     joystick.configure()
     joystick.save_configuration("configurations/data_collection_config.json")
 
@@ -22,7 +21,6 @@ def main():
         print("Starting joystick teleoperation test")
         while True:
             joystick.run()
-            # joystick.identify_buttons()
 
     except Exception as e:
         print(f"Test terminated: {e}")
