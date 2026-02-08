@@ -29,8 +29,8 @@ class JoystickTeleoperation:
 
     def isConnected(self):
         if self._client:
-            if self._client._joystick:
-                return True
+            #TODO: fix this logic
+            return True
         
         else:
             if self._joystick:
@@ -45,13 +45,13 @@ class JoystickTeleoperation:
         """
         try:
             if self._client:
-                ok, events = self.client.listen()
+                ok, events = self._client.listen()
                 if not ok:
                     return
 
                 for event in events:
                     if event["type"] == "button" and event["pressed"]:
-                        print(f"button pressed: {event["button"]}")
+                        print(f"button pressed: {event['button']}")
                         handler = self._button_map.get(event["button"]) #  get handlr
                         if handler:                     
                             handler() # call handler
@@ -127,13 +127,13 @@ class JoystickTeleoperation:
 
             while True:
                 if self._client is not None:
-                    ok, events = self.client.listen()
+                    ok, events = self._client.listen()
                     if not ok:
                         return 
                     
                     for event in events:
                         if event["type"] == "button" and event["pressed"]:
-                            self._button_map.get(event["button"]) = handler
+                            self._button_map[event["button"]] = handler
 
                             print(f"{handler.__name__} mapped to Button {button}")
                             break 
@@ -171,13 +171,13 @@ class JoystickTeleoperation:
         print("Click a button to identify:") 
         while True:
             if self._client is not None:
-                ok, events = self.client.listen()
+                ok, events = self._client.listen()
                 if not ok:
                     return
 
                 for event in events:
                     if event["type"] == "button" and event["pressed"]:
-                        print(f"button {event["button"]} pressed")
+                        print(f"button {event['button']} pressed")
                         print()
                         print("Click a button to identify:")
             else:

@@ -33,9 +33,6 @@ def main():
     else:
         joystick = JoystickTeleoperation(None, jog, capture_input, capture_output)
 
-    joystick.configure()
-    joystick.save_configuration("configurations/data_collection_config.json")
-
     try:
         print("Starting joystick teleoperation test")
         while True:
