@@ -3,22 +3,40 @@ import json
 from pathlib import Path
 
 class JoystickTeleoperation:
-    def __init__(self, *handlers):
+    def __init__(self, client = None, *handlers):
         """
         Accepts any number of handler functions in order
         """
         self._handlers = list(handlers)
+        self._client = client
+        self._joystick = None 
 
         self._handler_map = {
             handler.__name__: handler for handler in self._handlers
         }
 
 
-        self._joystick = None
-        self._button_count = 12 # DEFAULT - WILL CHANGE WHEN JOYSTICK IS CONNECTED
-        self._button_map = None
+        self._button_count = 12
+        self._button_map = {}
 
-        self._connect()
+        if self._client is None:
+            self._connect()
+
+        else:
+            from joystick.joystick_client import JoystickClient
+            self._map()
+
+
+    def isConnected(self):
+        if self._client:
+            if self._client._joystick:
+                return True
+        
+        else:
+            if self._joystick:
+                return True 
+            
+        return False
 
 
     def run(self):
@@ -26,21 +44,45 @@ class JoystickTeleoperation:
         Main function to start data collection using the joystick
         """
         try:
-            if not self._joystick:
-                if not self._connect():
-                    print("Quitting Joystick Teleoperation...")
+            if self._client:
+                ok, events = self.client.listen()
+                if not ok:
                     return
-                    
-            for event in pygame.event.get():
-                    if event.type == pygame.JOYBUTTONDOWN:
-                        button = event.button
-                        handler = self._button_map.get(button) #  get handlr
+
+                for event in events:
+                    if event["type"] == "button" and event["pressed"]:
+                        print(f"button pressed: {event["button"]}")
+                        handler = self._button_map.get(event["button"]) #  get handlr
                         if handler:                     
                             handler() # call handler
+
+            else:
+                if not self._joystick:
+                    if not self._connect():
+                        print("Quitting Joystick Teleoperation...")
+                        return
+                        
+                for event in pygame.event.get():
+                        if event.type == pygame.JOYBUTTONDOWN:
+                            button = event.button
+                            handler = self._button_map.get(button) #  get handlr
+                            if handler:                     
+                                handler() # call handler
+ 
 
         except Exception as e:
             print(f"Error running joystick teleoperation: {e}")
             return
+
+
+    def print_button_mapping(self):
+        # print out the button mapping
+        print("Button Functions:")
+        for button, handler in self._button_map.items():
+            if handler:
+                print(f"Button {button}: {handler.__name__}")
+            else: 
+                print(f"Button {button}: None")
 
 
     def remap(self, button, function):
@@ -49,7 +91,8 @@ class JoystickTeleoperation:
         Button: Number of the button on the joystick
         Function: Function to be mapped to the button 
         """
-        self._check_connection()
+        if not self.isConnected():
+            return 
 
         try:
             if button in self._button_map:
@@ -68,7 +111,9 @@ class JoystickTeleoperation:
         """
         Remap all functions to buttons
         """
-        self._check_connection() 
+        if not self.isConnected():
+            return 
+        
 
         print("\n=== Joystick Configuration Mode ===")
         print("Press a button to assign it to each function.")
@@ -81,17 +126,33 @@ class JoystickTeleoperation:
             print(f"Press a button for: { handler.__name__}")
 
             while True:
-                for event in pygame.event.get():
-                    if event.type == pygame.JOYBUTTONDOWN:
-                        button = event.button
+                if self._client is not None:
+                    ok, events = self.client.listen()
+                    if not ok:
+                        return 
+                    
+                    for event in events:
+                        if event["type"] == "button" and event["pressed"]:
+                            self._button_map.get(event["button"]) = handler
 
-                        self._button_map[button] = handler
+                            print(f"{handler.__name__} mapped to Button {button}")
+                            break 
+                    else:
+                        continue
+                    break
 
-                        print(f"{handler.__name__} mapped to Button {button}")
-                        break 
                 else:
-                    continue
-                break
+                    for event in pygame.event.get():
+                        if event.type == pygame.JOYBUTTONDOWN:
+                            button = event.button
+
+                            self._button_map[button] = handler
+
+                            print(f"{handler.__name__} mapped to Button {button}")
+                            break 
+                    else:
+                        continue
+                    break
 
 
         print("Configuration complete!")
@@ -103,17 +164,29 @@ class JoystickTeleoperation:
         Prints the index of any joystick button that is pressed.
         Used to identify button numbers for mapping.
         """
-        self._check_connection()
+        if not self.isConnected():
+            return 
+
 
         print("Click a button to identify:") 
         while True:
+            if self._client is not None:
+                ok, events = self.client.listen()
+                if not ok:
+                    return
 
-            for event in pygame.event.get():
-                if event.type == pygame.JOYBUTTONDOWN:
-                    button = event.button
-                    print(f"Button {button} pressed")
-                    print()
-                    print("Click a button to identify:")
+                for event in events:
+                    if event["type"] == "button" and event["pressed"]:
+                        print(f"button {event["button"]} pressed")
+                        print()
+                        print("Click a button to identify:")
+            else:
+                for event in pygame.event.get():
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        button = event.button
+                        print(f"Button {button} pressed")
+                        print()
+                        print("Click a button to identify:")
 
 
     def save_configuration(self, filename = "configurations/button_configuration.json"):
@@ -177,10 +250,15 @@ class JoystickTeleoperation:
 
     def _connect(self):
         """
+        Should only run if running natively (not wsl) 
         Private function to establish connection with the joystick
         Returns: 0 if no joystick is detected,
                  1 if joystick is detected
         """
+        if self._client: # if a client is being used == on wsl
+            return 
+
+        
         try:
             pygame.init()
             pygame.joystick.init()
@@ -216,19 +294,22 @@ class JoystickTeleoperation:
             print(f"Error Connecting to Joystick: {e}")
             return False
 
-    def _check_connection(self):
-        if not self._joystick:
-            raise RuntimeError("No joystick detected")
 
+    def _map(self):
+        self._button_count = self._client._button_count
+        button_start_index = 4
 
-    def print_button_mapping(self):
-        # print out the button mapping
-        print("Button Functions:")
-        for button, handler in self._button_map.items():
-            if handler:
-                print(f"Button {button}: {handler.__name__}")
-            else: 
-                print(f"Button {button}: None")
+        for i in range(self._button_count):
+            if i < button_start_index:
+            # to ignore buttons 0-3 to avoid accidental triggers using the right stick
+                self._button_map[i] = None
+            elif i - button_start_index < len(self._handlers):
+                self._button_map[i] = self._handlers[i - button_start_index]
+            else:
+                self._button_map[i] = None
+
+        self.print_button_mapping()
+
             
 
 

@@ -1,4 +1,4 @@
-from new_joystick.joystick_client import JoystickClient
+from joystick.joystick_client import JoystickClient
 
 def main():
     client = JoystickClient()
